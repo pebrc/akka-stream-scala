@@ -1,0 +1,374 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!doctype html>
+<html lang="en">
+
+	<head>
+		<meta charset="utf-8">
+
+		<title>Concurrency models in comparison</title>
+
+		<meta name="description" content="A comparison with
+                                                  examples from Akka Streams">
+		<meta name="author" content="Peter Brachwitz">
+
+		<meta name="apple-mobile-web-app-capable" content="yes" />
+		<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+
+		<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+
+		<link rel="stylesheet" href="css/reveal.min.css">
+		<link rel="stylesheet" href="css/theme/sky.css" id="theme">
+
+		<!-- For syntax highlighting -->
+		<link rel="stylesheet" href="lib/css/zenburn.css">
+
+		<!-- If the query includes 'print-pdf', include the PDF print sheet -->
+		<script>
+			if( window.location.search.match( /print-pdf/gi ) ) {
+				var link = document.createElement( 'link' );
+				link.rel = 'stylesheet';
+				link.type = 'text/css';
+				link.href = 'css/print/pdf.css';
+				document.getElementsByTagName( 'head' )[0].appendChild( link );
+			}
+		</script>
+
+
+		<!--[if lt IE 9]>
+		<script src="lib/js/html5shiv.js"></script>
+		<![endif]-->
+	</head>
+
+	<body>
+
+		<div class="reveal">
+
+			<!-- Any section element inside of this container is displayed as a slide -->
+			<div class="slides">
+				<section>
+					<h2>Concurrency Models in Comparison</h2>
+					<h4>With special attention to Akka Streams</h4>
+					<p>
+						<small> <a href="http://pbrc.blogspot.com">Peter Brachwitz</a>
+						/ <a href="http://twitter.com/p_brc">@p_brc</a></small>
+					</p>
+				</section>
+                                <section>
+                                  <h2>Agenda</h2>
+                                  <ol>
+                                    <li>Popular concurrency models in
+                                      comparison [15 min.]</li>
+                                    <li>A taste of Akka Streams [15 min]</li>
+                                  </ol>
+                                </section>
+
+                                <section>
+                                  <h2>Why?</h2>
+                                  <ul>
+                                    <li class="fragment">We want to be more 'reactive'
+                                      (we can discuss whether 'reactive'
+                                      is a 'thing' later)</li>
+                                    <li class="fragment">We want to make use of our
+                                    multi-core hardware</li>
+                                    <li class="fragment">Low-level concurrency is
+                                    hard</li>
+                                  </ul>
+                                </section>
+                                
+                                <section>
+                                  <h2>What?</h2>
+                                  <ul>
+                                    <li>Definitions: Concurrency vs.
+                                      parallelism </li>
+                                    <li>Here: 'processes' working together in a
+                                      meaningful manner</li>
+                                  </ul>                                    
+                                </section>
+				<section>
+				  <h2>Approaches to concurrent
+				  programming</h2>
+
+				  <ol>
+                                    <li class="fragment" >Shared
+                                    memory: Threads and
+                                    locks *</li>
+                                    
+                                    <li class="fragment" >Message
+                                    passing: 
+                                      <ol>
+                                        <li>Actors</li>
+                                        <li>CSP</li>
+                                      </ol>
+                                    </li>
+                                  </ol>
+                                  <p><small>* not a model</small></p>
+                                </section>
+
+				<section>
+					<h2>Shared memory, Threads and Locks</h2>
+					<ul>
+                                          
+                                          <li class="fragment">Naive approaches don't
+						scale very well. Think:
+						web server using a
+					    thread per request.</li>
+                                          <li class="fragment">'Location
+						based programming' (~ R.
+						Hickey)</li>
+                                          <li class="fragment">Hard to reason about, error-prone</li>
+
+				</section>
+
+				<section>
+					<h2>Mitigation: Event-loop architecture</h2>
+                                        <ul>
+                                                                                    
+                                          <li>Single-threaded,
+                                            non-blocking </li>
+                                          <li>Handle blocking or
+                                          time-consuming computations
+                                            in different execution
+                                          contexts</li>
+                                          <li>Handle the completion of
+                                          these computations via
+                                          callbacks (callback hell)</li>
+                                        </ul>
+				</section>
+                                <section>
+<pre><code>
+doAsync1(function () {
+  doAsync2(function () {
+    doAsync3(function () {
+      doAsync4(function () {
+    })
+  })
+})
+</code></pre>
+<p><small><a href="https://medium.com/@wavded/managing-node-js-callback-hell-1fe03ba8baf">cf.
+      Managing
+      Node.js Callback Hell</a></small></p>
+                                  </section>
+
+				<section>
+                                  <section>
+                                    <h2>The Actor Model</h2>
+                                    <p><small>[originally] Hewitt, Bishop, Steiger 1973</small></p>
+                                    <img src="actors2.jpg" />
+                                  </section>
+                                  <section>
+					
+                                        <ul>
+                                          <li>'Objects' communicating
+                                          via messages</li>
+                                          <li>Sequencing of messages
+                                          via actor-local queues
+                                            ('mailbox')</li>
+                                          <li class="fragment">You need to know your
+                                          peer</li>
+                                          <li class="fragment">No inherent
+                                          back-pressure (can be
+                                          implemented on application
+                                          level)</li>
+                                          
+                                        </ul>
+                                  </section>
+                                  
+
+				</section>
+
+				<section>
+                                  <section>
+                                    <h2>CSP</h2>
+                                    <p><small>[originally] Hoare 1978</small></p>
+                                    <img src="csp.png" />
+                                  </section>
+                                  <section>
+					<h2>CSP</h2>
+                                        <p><small>in core.async flavour</small></p>
+					<ul>
+						<li class="fragment">Channels
+						  as conveyor belts
+						  between 'processes'</li>
+						<li class="fragment">
+						  Sequential looking asynchrony
+						  via go blocks</li>
+						<li
+                                                    class="fragment">Channels
+                                                    are bounded: back pressure</li>
+                                                <li class="fragment">Not
+                                                for distributed
+                                                computing: everything within
+                                                one VM</li>
+
+					</ul>
+                                  </section>
+
+				</section>
+                                <section>
+                                  <h2>Comparison with actor
+                                  systems</h2>
+                                  <ul>
+                                    <li>Anonymity vs. Identity </li>
+                                    <li>Rendezvous vs. Asynchrony</li>
+                                    <li>Explicit vs. implicit
+                                    'channels'</li>
+                                    <li>Local vs. Distributed</li>
+                                  </ul>
+                                </section>
+                                <section>
+                                  <h2>Can we have it both ways?</h2>
+                                  <img src="TcpFlow.jpeg">
+                                  </img>
+                                </section>
+                                <section>
+                                  <h2>Akka Streams</h2>
+                                  <img src="AkkaStreams.jpeg" />
+                                </section>
+                                <section>
+                                  <h2>Let's look at some code!</h2>
+                                </section>
+                                <section>
+                                  <h3>Publisher</h3>
+                                  <pre><code data-trim
+                                  contenteditable>
+ def receive = {
+    case RequestMore(elements) ⇒
+      demand += elements
+      push()
+    case PushMore ⇒
+      push()
+    case Cancel ⇒
+      context.parent ! Finished
+      softShutdown()
+  }
+
+                                </code></pre></section>
+
+                                  <section>
+                                    <h3>Subscriber</h3>
+                                    <pre><code data-trim contenteditable>
+ override def onSubscribe(sub: Subscription): Unit = {
+    subscription = sub
+    requestMore()
+  }
+
+  override def onError(cause: Throwable): Unit = ()
+
+  override def onComplete(): Unit = ()
+
+  override def onNext(element: T): Unit = {
+    requested -= 1
+    requestMore()
+  }
+                                    </code></pre>
+                                  </section>
+                                  <section>
+                                    <h2>Add some DSL icing on top</h2>
+                                    <pre><code data-trim>
+    val flow = FlowFrom[Int].
+      map(_.toString).       //creates an actor
+      filter(_.length == 2). //creates an actor 
+      drop(2).               //creates an actor
+      withSink(sink)
+
+                                    </code></pre>
+                                  </section>
+
+                                  <section>
+                                    <h2> ... and even graphs</h2>
+                                    <pre><code>
+  val g = FlowGraph { implicit b =>
+      val bcast = Broadcast[String]
+      val zip = Zip[Int, String]
+
+      in ~> bcast ~> count ~> zip.left
+      bcast ~> toUpper ~> zip.right
+      zip.out ~> out
+    }.run()
+                </code></pre>
+                </section>
+                               <section>
+                                 <h2>Let's look at this in more detail
+                                   in an editor</h2>
+                               </section>
+
+                               <section>
+                                <h2>Sources</h2>
+                                <ul>
+                                  <li>
+                                    <a href="https://github.com/reactive-streams/reactive-streams">
+                                      Reactive Streams</a>
+                                  </li>
+                                  <li>
+                                    <a href="http://akka.io/news/2014/09/12/akka-streams-0.7-released.html">
+                                      Akka Streams 0.7 announcement
+                                    </a>
+                                  </li>
+                                  <li>
+                                    <a href="https://github.com/typesafehub/activator-akka-stream-scala/blob/master/tutorial/index.html">
+                                     (outdated) Akka Streams samples</a></li>
+                                  <li>
+                                    <a
+                                        href="http://www.infoq.com/presentations/clojure-core-async">
+                                      CSP: Rich Hickey speaking at Strange
+                                      Loop 2013
+                                    </a>
+                                  </li>
+                                  <li>
+                                    <a
+                                        href="http://dspace.mit.edu/handle/1721.1/6952#files-area">
+                                        Actors: Gul
+                                        Agha's dissertation</a>
+                                  </li>
+                                  
+                                </ul>
+
+			 
+			
+			
+			
+			</div>
+
+		</div>
+
+		<script src="lib/js/head.min.js"></script>
+		<script src="js/reveal.min.js"></script>
+
+		<script>
+
+			// Full list of configuration options available here:
+			// https://github.com/hakimel/reveal.js#configuration
+			Reveal.initialize({
+				controls: true,
+				progress: true,
+				history: true,
+				center: true,
+
+				theme: Reveal.getQueryHash().theme, // available themes are in /css/theme
+				transition: Reveal.getQueryHash().transition || 'default', // default/cube/page/concave/zoom/linear/fade/none
+
+				// Parallax scrolling
+				// parallaxBackgroundImage: 'https://s3.amazonaws.com/hakim-static/reveal-js/reveal-parallax-1.jpg',
+				// parallaxBackgroundSize: '2100px 900px',
+
+				// Optional libraries used to extend on reveal.js
+				dependencies: [
+					{ src: 'lib/js/classList.js', condition: function() { return !document.body.classList; } },
+					{ src: 'plugin/markdown/marked.js', condition: function() { return !!document.querySelector( '[data-markdown]' ); } },
+					{ src: 'plugin/markdown/markdown.js', condition: function() { return !!document.querySelector( '[data-markdown]' ); } },
+					{ src: 'plugin/highlight/highlight.js', async: true, callback: function() { hljs.initHighlightingOnLoad(); } },
+					{ src: 'plugin/zoom-js/zoom.js', async: true, condition: function() { return !!document.body.classList; } },
+					{ src:
+                                        'plugin/notes/notes.js',
+                                        async: true, condition:
+                                        function() { return
+                                        !!document.body.classList; } },
+                                        
+                                        { src: 'plugin/math/math.js', async: true }
+				]
+			});
+
+		</script>
+
+	</body>
+</html>
