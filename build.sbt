@@ -10,6 +10,10 @@ libraryDependencies ++= Seq(
   "com.typesafe.akka" %% "akka-stream-experimental" % "0.7"
 )
 
+fork := true
+
+javaOptions in run += "-Xmx512M"
+
 scalariformSettings
 
 ScalariformKeys.preferences := ScalariformKeys.preferences.value
